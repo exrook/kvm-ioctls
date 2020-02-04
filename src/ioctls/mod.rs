@@ -63,7 +63,7 @@ impl KvmRunWrapper {
             )
         };
         if addr == libc::MAP_FAILED {
-            return Err(errno::Error::last());
+            return Err(errno::Error::last_os_error());
         }
 
         Ok(KvmRunWrapper {

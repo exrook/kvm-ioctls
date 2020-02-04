@@ -84,7 +84,7 @@ impl Kvm {
         // Safe because we give a constant nul-terminated string and verify the result.
         let ret = unsafe { open("/dev/kvm\0".as_ptr() as *const c_char, open_flags) };
         if ret < 0 {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         } else {
             Ok(ret)
         }
@@ -159,7 +159,7 @@ impl Kvm {
         if res > 0 {
             Ok(res as usize)
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -242,7 +242,7 @@ impl Kvm {
             ioctl_with_mut_ptr(self, kind, cpuid.as_mut_fam_struct_ptr())
         };
         if ret < 0 {
-            return Err(errno::Error::last());
+            return Err(errno::Error::last_os_error());
         }
 
         Ok(cpuid)
@@ -329,7 +329,7 @@ impl Kvm {
             )
         };
         if ret < 0 {
-            return Err(errno::Error::last());
+            return Err(errno::Error::last_os_error());
         }
 
         // The ioctl will also update the internal `nmsrs` with the actual count.
@@ -362,7 +362,7 @@ impl Kvm {
             let run_mmap_size = self.get_vcpu_mmap_size()?;
             Ok(new_vmfd(vm_file, run_mmap_size))
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -485,14 +485,14 @@ mod tests {
 
     #[test]
     fn test_bad_kvm_fd() {
-        let badf_errno = libc::EBADF;
+        let badf_errno = Some(libc::EBADF);
 
         let faulty_kvm = Kvm {
             kvm: unsafe { File::from_raw_fd(-1) },
         };
 
         assert_eq!(
-            faulty_kvm.get_vcpu_mmap_size().unwrap_err().errno(),
+            faulty_kvm.get_vcpu_mmap_size().unwrap_err().raw_os_error(),
             badf_errno
         );
         assert_eq!(faulty_kvm.get_nr_vcpus(), 4);
@@ -500,19 +500,19 @@ mod tests {
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         {
             assert_eq!(
-                faulty_kvm.get_emulated_cpuid(4).err().unwrap().errno(),
+                faulty_kvm.get_emulated_cpuid(4).err().unwrap().raw_os_error(),
                 badf_errno
             );
             assert_eq!(
-                faulty_kvm.get_supported_cpuid(4).err().unwrap().errno(),
+                faulty_kvm.get_supported_cpuid(4).err().unwrap().raw_os_error(),
                 badf_errno
             );
 
             assert_eq!(
-                faulty_kvm.get_msr_index_list().err().unwrap().errno(),
+                faulty_kvm.get_msr_index_list().err().unwrap().raw_os_error(),
                 badf_errno
             );
         }
-        assert_eq!(faulty_kvm.create_vm().err().unwrap().errno(), badf_errno);
+        assert_eq!(faulty_kvm.create_vm().err().unwrap().raw_os_error(), badf_errno);
     }
 }

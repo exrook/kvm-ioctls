@@ -104,7 +104,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -133,7 +133,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -178,7 +178,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -216,7 +216,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -255,7 +255,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -287,7 +287,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -325,7 +325,7 @@ impl VmFd {
         if ret == 0 {
             Ok(pitstate)
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -364,7 +364,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -397,7 +397,7 @@ impl VmFd {
         if ret == 0 {
             Ok(clock)
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -432,7 +432,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -484,7 +484,7 @@ impl VmFd {
         if ret >= 0 {
             Ok(ret)
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -532,7 +532,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -600,7 +600,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -667,7 +667,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -815,7 +815,7 @@ impl VmFd {
         if ret == 0 {
             Ok(bitmap)
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -862,7 +862,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -911,7 +911,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -979,7 +979,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -1013,7 +1013,7 @@ impl VmFd {
         #[allow(clippy::cast_lossless)]
         let vcpu_fd = unsafe { ioctl_with_val(&self.vm, KVM_CREATE_VCPU(), id as c_ulong) };
         if vcpu_fd < 0 {
-            return Err(errno::Error::last());
+            return Err(errno::Error::last_os_error());
         }
 
         // Wrap the vCPU now in case the following ? returns early. This is safe because we verified
@@ -1106,7 +1106,7 @@ impl VmFd {
         if ret == 0 {
             Ok(new_device(unsafe { File::from_raw_fd(device.fd as i32) }))
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -1139,7 +1139,7 @@ impl VmFd {
         // kernel will write exactly the size of the struct.
         let ret = unsafe { ioctl_with_mut_ref(self, KVM_ARM_PREFERRED_TARGET(), kvi) };
         if ret != 0 {
-            return Err(errno::Error::last());
+            return Err(errno::Error::last_os_error());
         }
         Ok(())
     }
@@ -1196,7 +1196,7 @@ impl VmFd {
         if ret == 0 {
             Ok(())
         } else {
-            Err(errno::Error::last())
+            Err(errno::Error::last_os_error())
         }
     }
 
@@ -1565,7 +1565,7 @@ mod tests {
     #[test]
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     fn test_faulty_vm_fd() {
-        let badf_errno = libc::EBADF;
+        let badf_errno = Some(libc::EBADF);
 
         let faulty_vm_fd = VmFd {
             vm: unsafe { File::from_raw_fd(-1) },
@@ -1585,23 +1585,23 @@ mod tests {
                 faulty_vm_fd
                     .set_user_memory_region(invalid_mem_region)
                     .unwrap_err()
-                    .errno()
+                    .raw_os_error()
             },
             badf_errno
         );
         assert_eq!(
-            faulty_vm_fd.set_tss_address(0).unwrap_err().errno(),
+            faulty_vm_fd.set_tss_address(0).unwrap_err().raw_os_error(),
             badf_errno
         );
         assert_eq!(
-            faulty_vm_fd.create_irq_chip().unwrap_err().errno(),
+            faulty_vm_fd.create_irq_chip().unwrap_err().raw_os_error(),
             badf_errno
         );
         assert_eq!(
             faulty_vm_fd
                 .create_pit2(kvm_pit_config::default())
                 .unwrap_err()
-                .errno(),
+                .raw_os_error(),
             badf_errno
         );
         let event_fd = EventFd::new(EFD_NONBLOCK).unwrap();
@@ -1609,54 +1609,54 @@ mod tests {
             faulty_vm_fd
                 .register_ioevent(&event_fd, &IoEventAddress::Pio(0), 0u64)
                 .unwrap_err()
-                .errno(),
+                .raw_os_error(),
             badf_errno
         );
         assert_eq!(
             faulty_vm_fd
                 .get_irqchip(&mut kvm_irqchip::default())
                 .unwrap_err()
-                .errno(),
+                .raw_os_error(),
             badf_errno
         );
         assert_eq!(
             faulty_vm_fd
                 .set_irqchip(&kvm_irqchip::default())
                 .unwrap_err()
-                .errno(),
+                .raw_os_error(),
             badf_errno
         );
-        assert_eq!(faulty_vm_fd.get_clock().unwrap_err().errno(), badf_errno);
+        assert_eq!(faulty_vm_fd.get_clock().unwrap_err().raw_os_error(), badf_errno);
         assert_eq!(
             faulty_vm_fd
                 .set_clock(&kvm_clock_data::default())
                 .unwrap_err()
-                .errno(),
+                .raw_os_error(),
             badf_errno
         );
-        assert_eq!(faulty_vm_fd.get_pit2().unwrap_err().errno(), badf_errno);
+        assert_eq!(faulty_vm_fd.get_pit2().unwrap_err().raw_os_error(), badf_errno);
         assert_eq!(
             faulty_vm_fd
                 .set_pit2(&kvm_pit_state2::default())
                 .unwrap_err()
-                .errno(),
+                .raw_os_error(),
             badf_errno
         );
         assert_eq!(
             faulty_vm_fd
                 .register_irqfd(&event_fd, 0)
                 .unwrap_err()
-                .errno(),
+                .raw_os_error(),
             badf_errno
         );
 
         assert_eq!(
-            faulty_vm_fd.create_vcpu(0).err().unwrap().errno(),
+            faulty_vm_fd.create_vcpu(0).err().unwrap().raw_os_error(),
             badf_errno
         );
 
         assert_eq!(
-            faulty_vm_fd.get_dirty_log(0, 0).unwrap_err().errno(),
+            faulty_vm_fd.get_dirty_log(0, 0).unwrap_err().raw_os_error(),
             badf_errno
         );
     }

@@ -26,7 +26,7 @@ impl DeviceFd {
     pub fn set_device_attr(&self, device_attr: &kvm_device_attr) -> Result<()> {
         let ret = unsafe { ioctl_with_ref(self, KVM_SET_DEVICE_ATTR(), device_attr) };
         if ret != 0 {
-            return Err(errno::Error::last());
+            return Err(errno::Error::last_os_error());
         }
         Ok(())
     }
@@ -101,7 +101,7 @@ mod tests {
         // We are just creating a test device. Creating a real device would make the CI dependent
         // on host configuration (like having /dev/vfio). We expect this to fail.
         assert!(device_fd.set_device_attr(&dist_attr).is_err());
-        assert_eq!(errno::Error::last().errno(), 25);
+        assert_eq!(errno::Error::last_os_error().raw_os_error(), Some(25));
     }
 
     #[test]
@@ -140,6 +140,6 @@ mod tests {
         // We are just creating a test device. Creating a real device would make the CI dependent
         // on host configuration (like having /dev/vfio). We expect this to fail.
         assert!(device_fd.set_device_attr(&dist_attr).is_err());
-        assert_eq!(errno::Error::last().errno(), 25);
+        assert_eq!(errno::Error::last_os_error().raw_os_error(), Some(25));
     }
 }
